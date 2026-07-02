@@ -1,0 +1,79 @@
+name: Backend · CI y solicitud de despliegue
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar plataforma base
+        uses: actions/checkout@v6
+        with:
+          repository: proyecto-arquitectura-final/elecciones-plataforma
+          token: ${{ secrets.CROSS_REPO_READ_TOKEN || github.token }}
+          path: workspace
+          persist-credentials: false
+
+      - name: Limpiar gitlinks
+        run: rm -rf workspace/back workspace/commons workspace/front
+
+      - name: Descargar este backend
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: workspace/back
+          persist-credentials: false
+
+      - name: Descargar commons estable
+        uses: actions/checkout@v6
+        with:
+          repository: proyecto-arquitectura-final/commons
+          ref: main
+          token: ${{ secrets.CROSS_REPO_READ_TOKEN || github.token }}
+          path: workspace/commons
+          persist-credentials: false
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: |
+            workspace/pom.xml
+            workspace/back/pom.xml
+            workspace/commons/pom.xml
+
+      - name: Compilar y ejecutar pruebas
+        run: mvn -B -ntp -U -f workspace/pom.xml -pl back -am clean verify
+
+  dispatch-production:
+    name: Notificar a la plataforma
+    needs: verify
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Iniciar workflow central
+        env:
+          GH_TOKEN: ${{ secrets.PLATFORM_DISPATCH_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: |
+          test -n "$GH_TOKEN" || { echo "Falta PLATFORM_DISPATCH_TOKEN" >&2; exit 2; }
+          gh workflow run component-deploy.yml \
+            --repo proyecto-arquitectura-final/elecciones-plataforma \
+            --ref main \
+            -f component=backend \
+            -f component_sha="$SHA"
