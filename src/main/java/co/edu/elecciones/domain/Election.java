@@ -1,2 +1,17 @@
-package co.edu.elecciones.domain; import jakarta.persistence.*; import java.time.LocalDate;
-@Entity public class Election extends BaseEntity { public String name; @Enumerated(EnumType.STRING) public ElectionType type; @Enumerated(EnumType.STRING) public ElectionRound round=ElectionRound.NINGUNA; public LocalDate electionDate; @Enumerated(EnumType.STRING) public ElectionState state=ElectionState.CONFIGURADA; }
+package co.edu.elecciones.domain;
+
+import jakarta.persistence.*;
+
+import java.time.LocalDate;
+
+@Entity
+public class Election extends BaseEntity {
+    public String name;
+    @Enumerated(EnumType.STRING)
+    public ElectionType type;
+    @Enumerated(EnumType.STRING)
+    public ElectionRound round = ElectionRound.NINGUNA;
+    public LocalDate electionDate;
+    @Enumerated(EnumType.STRING)
+    public ElectionState state = ElectionState.CONFIGURADA;
+}

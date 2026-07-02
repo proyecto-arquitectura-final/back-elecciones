@@ -1,1 +1,3 @@
-package co.edu.elecciones.domain; public enum Role { ADMINISTRADOR, ANALISTA }
+package co.edu.elecciones.domain;
+
+public enum Role {ADMINISTRADOR, ANALISTA}

@@ -1,2 +1,21 @@
-package co.edu.elecciones.domain; import jakarta.persistence.*; import java.time.Instant;
-@Entity public class AuditEvent { @Id @GeneratedValue(strategy=GenerationType.IDENTITY) public Long id; public Instant at=Instant.now(); public String username; public String action; public String entity; public Long entityId; @Column(length=1500) public String details; public String ip; public boolean success=true; }
+package co.edu.elecciones.domain;
+
+import jakarta.persistence.*;
+
+import java.time.Instant;
+
+@Entity
+public class AuditEvent {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long id;
+    public Instant at = Instant.now();
+    public String username;
+    public String action;
+    public String entity;
+    public Long entityId;
+    @Column(length = 1500)
+    public String details;
+    public String ip;
+    public boolean success = true;
+}

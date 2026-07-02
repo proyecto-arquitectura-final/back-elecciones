@@ -1,2 +1,84 @@
-package co.edu.elecciones.controller; import co.edu.elecciones.commons.dto.ApiResponse; import co.edu.elecciones.domain.*; import co.edu.elecciones.dto.Requests.OfficialResultRequest; import co.edu.elecciones.dto.Responses.LiveSummary; import co.edu.elecciones.repository.*; import co.edu.elecciones.service.*; import jakarta.servlet.http.HttpServletRequest; import org.springframework.web.bind.annotation.*; import java.util.*;
-@RestController @RequestMapping("/api/v1/resultados") public class ResultadosController { private final OfficialResultRepository repo; private final ElectionRepository elections; private final CandidateRepository candidates; private final PredictionService predictions; private final AuditService audit; public ResultadosController(OfficialResultRepository r,ElectionRepository e,CandidateRepository c,PredictionService p,AuditService a){repo=r;elections=e;candidates=c;predictions=p;audit=a;} @GetMapping public ApiResponse<List<OfficialResult>> all(@RequestParam(required=false) Long electionId,@RequestParam(required=false) String department){ if(electionId!=null) return ApiResponse.ok("OK",repo.findByElectionId(electionId)); if(department!=null) return ApiResponse.ok("OK",repo.findByDepartmentIgnoreCase(department)); return ApiResponse.ok("OK",repo.findAll()); } @PostMapping public ApiResponse<OfficialResult> create(@RequestBody OfficialResultRequest req,HttpServletRequest http){ OfficialResult r=new OfficialResult(); r.election=elections.findById(req.electionId()).orElseThrow(); r.candidate=candidates.findById(req.candidateId()).orElseThrow(); r.department=req.department(); r.municipality=req.municipality(); r.votes=req.votes(); r.percentage=req.percentage(); r.reportedTables=req.reportedTables(); r.totalTables=req.totalTables(); r.participation=req.participation(); if(req.source()!=null)r.source=req.source(); var s=repo.save(r); audit.log("CREATE","OfficialResult",s.id,"Resultado importado",http); return ApiResponse.ok("Creado",s);} @GetMapping("/live") public ApiResponse<LiveSummary> live(){ long votes=repo.findAll().stream().mapToLong(r->r.votes).sum(); double tablePct=repo.findAll().stream().mapToDouble(r->r.totalTables==0?0:r.reportedTables*100.0/r.totalTables).average().orElse(0); double part=repo.findAll().stream().mapToDouble(r->r.participation).average().orElse(0); return ApiResponse.ok("Predicción ≠ resultado oficial",new LiveSummary(votes,tablePct,part,predictions.byPartialResults())); }}
+package co.edu.elecciones.controller;
+
+import co.edu.elecciones.commons.dto.ApiResponse;
+import co.edu.elecciones.domain.OfficialResult;
+import co.edu.elecciones.dto.Requests.OfficialResultRequest;
+import co.edu.elecciones.dto.Responses.LiveSummary;
+import co.edu.elecciones.repository.CandidateRepository;
+import co.edu.elecciones.repository.ElectionRepository;
+import co.edu.elecciones.repository.OfficialResultRepository;
+import co.edu.elecciones.service.AuditService;
+import co.edu.elecciones.service.PredictionService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/resultados")
+public class ResultadosController {
+    private final OfficialResultRepository repository;
+    private final ElectionRepository elections;
+    private final CandidateRepository candidates;
+    private final PredictionService predictions;
+    private final AuditService audit;
+
+    public ResultadosController(OfficialResultRepository repository, ElectionRepository elections,
+                                CandidateRepository candidates, PredictionService predictions, AuditService audit) {
+        this.repository = repository;
+        this.elections = elections;
+        this.candidates = candidates;
+        this.predictions = predictions;
+        this.audit = audit;
+    }
+
+    @GetMapping
+    public ApiResponse<List<OfficialResult>> all(
+            @RequestParam(required = false) Long electionId,
+            @RequestParam(required = false) String department
+    ) {
+        if (electionId != null) {
+            return ApiResponse.ok("OK", repository.selectByElectionId(electionId));
+        }
+        if (department != null && !department.isBlank()) {
+            return ApiResponse.ok("OK", repository.selectByDepartment(department));
+        }
+        return ApiResponse.ok("OK", repository.selectAll());
+    }
+
+    @PostMapping
+    public ApiResponse<OfficialResult> create(@RequestBody OfficialResultRequest request, HttpServletRequest http) {
+        OfficialResult result = new OfficialResult();
+        result.election = elections.selectById(request.electionId()).orElseThrow();
+        result.candidate = candidates.selectById(request.candidateId()).orElseThrow();
+        result.department = request.department();
+        result.municipality = request.municipality();
+        result.votes = request.votes();
+        result.percentage = request.percentage();
+        result.reportedTables = request.reportedTables();
+        result.totalTables = request.totalTables();
+        result.participation = request.participation();
+        if (request.source() != null) {
+            result.source = request.source();
+        }
+        OfficialResult saved = repository.save(result);
+        audit.log("CREATE", "OfficialResult", saved.id, "Resultado importado", http);
+        return ApiResponse.ok("Creado", saved);
+    }
+
+    @GetMapping("/live")
+    public ApiResponse<LiveSummary> live() {
+        long votes = repository.selectTotalVotes();
+        double tablePercentage = repository.selectAverageReportedTablePercentage();
+        double participation = repository.selectAverageParticipation();
+        return ApiResponse.ok(
+                "Predicción ≠ resultado oficial",
+                new LiveSummary(votes, tablePercentage, participation, predictions.byPartialResults())
+        );
+    }
+}

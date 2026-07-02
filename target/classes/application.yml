@@ -1,43 +1,35 @@
 server:
   port: 8080
+
 spring:
   application:
     name: elecciones-backend
+
   datasource:
-    url: jdbc:h2:mem:elecciones;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
-    username: sa
-    password:
-  h2:
-    console:
-      enabled: true
+    url: jdbc:postgresql://127.0.0.1:5433/elecciones2026
+    username: elecciones
+    password: elecciones
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     open-in-view: false
     properties:
-      hibernate.format_sql: true
+      hibernate:
+        format_sql: true
+
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+
 app:
   jwt:
     secret: "elecciones-colombia-2026-secret-key-super-segura-32chars"
     expiration-minutes: 480
+
 management:
   endpoints:
     web:
       exposure:
         include: health,info,metrics
----
-spring:
-  config:
-    activate:
-      on-profile: postgres
-  datasource:
-    url: jdbc:postgresql://localhost:5432/elecciones2026
-    username: elecciones
-    password: elecciones
-  jpa:
-    hibernate:
-      ddl-auto: update

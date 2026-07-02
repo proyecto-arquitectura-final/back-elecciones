@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:elecciones-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;NON_KEYWORDS=AT
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+app:
+  jwt:
+    secret: "elecciones-colombia-2026-secret-key-super-segura-32chars"
+    expiration-minutes: 480
+  seed:
+    enabled: true
+    admin-name: Administrador
+    admin-email: admin@elecciones.gov.co
+    admin-password: admin1234
+    analyst-name: Analista Electoral
+    analyst-email: analista@elecciones.gov.co
+    analyst-password: analista1234

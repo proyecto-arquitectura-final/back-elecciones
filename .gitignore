@@ -1,0 +1,102 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# Maven Wrapper
+!/.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# Visual Studio Code
+.vscode/
+
+# Archivos compilados de Java
+*.class
+*.jar
+*.war
+*.ear
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Variables de entorno y configuración local
+.env
+.env.*
+!.env.example
+application-local.properties
+application-local.yml
+application-local.yaml
+application-dev.properties
+application-dev.yml
+application-dev.yaml
+
+# Spring Boot
+spring-shell.log
+
+# Cobertura de pruebas
+coverage/
+jacoco.exec
+site/jacoco/
+
+# SonarQube
+.sonar/
+.scannerwork/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archivos generados
+generated/
+generated-sources/
+
+# Heap dumps y archivos JVM
+*.hprof
+hs_err_pid*
+replay_pid*
+
+# Lombok
+.lombok/
+
+# Docker local
+docker-compose.override.yml
+
+# Claves y certificados
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore

@@ -1,2 +1,164 @@
-package co.edu.elecciones.config; import co.edu.elecciones.domain.*; import co.edu.elecciones.repository.*; import org.springframework.boot.CommandLineRunner; import org.springframework.context.annotation.Bean; import org.springframework.context.annotation.Configuration; import org.springframework.security.crypto.password.PasswordEncoder; import java.time.LocalDate;
-@Configuration public class DataInitializer { @Bean CommandLineRunner seed(UserRepository users, PartyRepository parties, CandidateRepository candidates, ElectionRepository elections, PollRepository polls, OfficialResultRepository results, PasswordEncoder enc){ return args->{ if(!users.existsByEmail("admin@elecciones.gov.co")){ AppUser a=new AppUser(); a.name="Administrador"; a.email="admin@elecciones.gov.co"; a.password=enc.encode("admin1234"); a.role=Role.ADMINISTRADOR; users.save(a); AppUser an=new AppUser(); an.name="Analista Electoral"; an.email="analista@elecciones.gov.co"; an.password=enc.encode("analista1234"); an.role=Role.ANALISTA; users.save(an);} if(parties.count()==0){ Party p1=new Party(); p1.name="Partido Liberal Colombiano"; p1.acronym="PL"; p1.color="#DC143C"; p1.foundationYear=1848; parties.save(p1); Party p2=new Party(); p2.name="Coalición Centro Democrático"; p2.acronym="CD"; p2.color="#2563EB"; p2.foundationYear=2013; parties.save(p2); Candidate c1=new Candidate(); c1.name="María Fernández"; c1.vicePresidentName="Carlos Rojas"; c1.party=p1; c1.electionType=ElectionType.PRESIDENCIA; candidates.save(c1); Candidate c2=new Candidate(); c2.name="Juan Rodríguez"; c2.vicePresidentName="Ana Torres"; c2.party=p2; c2.electionType=ElectionType.PRESIDENCIA; candidates.save(c2); Election e=new Election(); e.name="Presidencia Colombia 2026 - Primera vuelta"; e.type=ElectionType.PRESIDENCIA; e.round=ElectionRound.PRIMERA; e.electionDate=LocalDate.of(2026,5,31); e.state=ElectionState.EN_CONTEO; elections.save(e); OfficialResult r1=new OfficialResult(); r1.election=e; r1.candidate=c1; r1.department="Bogotá D.C."; r1.municipality="Bogotá"; r1.votes=4250000L; r1.percentage=38.5; r1.reportedTables=88245; r1.totalTables=98500; r1.participation=68.2; results.save(r1); OfficialResult r2=new OfficialResult(); r2.election=e; r2.candidate=c2; r2.department="Bogotá D.C."; r2.municipality="Bogotá"; r2.votes=3850000L; r2.percentage=34.8; r2.reportedTables=88245; r2.totalTables=98500; r2.participation=68.2; results.save(r2); Poll poll=new Poll(); poll.source="Centro Nacional de Consultoría"; poll.date=LocalDate.of(2026,3,15); poll.sampleSize=2500; poll.marginError=2.0; poll.methodology="Telefónica"; PollResult pr1=new PollResult(); pr1.poll=poll; pr1.candidate=c1; pr1.percentage=36.5; PollResult pr2=new PollResult(); pr2.poll=poll; pr2.candidate=c2; pr2.percentage=34.0; poll.results.add(pr1); poll.results.add(pr2); polls.save(poll);} }; }}
+package co.edu.elecciones.config;
+
+import co.edu.elecciones.domain.*;
+import co.edu.elecciones.repository.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+
+@Configuration
+@ConditionalOnProperty(prefix = "app.seed", name = "enabled", havingValue = "true", matchIfMissing = true)
+public class DataInitializer {
+
+    @Value("${app.seed.admin-name}")
+    private String adminName;
+    @Value("${app.seed.admin-email}")
+    private String adminEmail;
+    @Value("${app.seed.admin-password}")
+    private String adminPassword;
+    @Value("${app.seed.analyst-name}")
+    private String analystName;
+    @Value("${app.seed.analyst-email}")
+    private String analystEmail;
+    @Value("${app.seed.analyst-password}")
+    private String analystPassword;
+
+    @Bean
+    CommandLineRunner seed(
+            UserRepository users,
+            PartyRepository parties,
+            CandidateRepository candidates,
+            ElectionRepository elections,
+            PollRepository polls,
+            PollResultRepository pollResults,
+            OfficialResultRepository results,
+            PasswordEncoder encoder
+    ) {
+        return args -> initialize(users, parties, candidates, elections, polls, pollResults, results, encoder);
+    }
+
+    @Transactional
+    void initialize(
+            UserRepository users,
+            PartyRepository parties,
+            CandidateRepository candidates,
+            ElectionRepository elections,
+            PollRepository polls,
+            PollResultRepository pollResults,
+            OfficialResultRepository results,
+            PasswordEncoder encoder
+    ) {
+        createUserIfMissing(users, encoder, adminName, adminEmail, adminPassword, Role.ADMINISTRADOR);
+        createUserIfMissing(users, encoder, analystName, analystEmail, analystPassword, Role.ANALISTA);
+
+        if (parties.selectCount() != 0) {
+            return;
+        }
+
+        Party liberal = new Party();
+        liberal.name = "Partido Liberal Colombiano";
+        liberal.acronym = "PL";
+        liberal.color = "#DC143C";
+        liberal.foundationYear = 1848;
+        liberal = parties.save(liberal);
+
+        Party centroDemocratico = new Party();
+        centroDemocratico.name = "Coalición Centro Democrático";
+        centroDemocratico.acronym = "CD";
+        centroDemocratico.color = "#2563EB";
+        centroDemocratico.foundationYear = 2013;
+        centroDemocratico = parties.save(centroDemocratico);
+
+        Candidate maria = new Candidate();
+        maria.name = "María Fernández";
+        maria.vicePresidentName = "Carlos Rojas";
+        maria.party = liberal;
+        maria.electionType = ElectionType.PRESIDENCIA;
+        maria = candidates.save(maria);
+
+        Candidate juan = new Candidate();
+        juan.name = "Juan Rodríguez";
+        juan.vicePresidentName = "Ana Torres";
+        juan.party = centroDemocratico;
+        juan.electionType = ElectionType.PRESIDENCIA;
+        juan = candidates.save(juan);
+
+        Election election = new Election();
+        election.name = "Presidencia Colombia 2026 - Primera vuelta";
+        election.type = ElectionType.PRESIDENCIA;
+        election.round = ElectionRound.PRIMERA;
+        election.electionDate = LocalDate.of(2026, 5, 31);
+        election.state = ElectionState.EN_CONTEO;
+        election = elections.save(election);
+
+        OfficialResult firstResult = new OfficialResult();
+        firstResult.election = election;
+        firstResult.candidate = maria;
+        firstResult.department = "Bogotá D.C.";
+        firstResult.municipality = "Bogotá";
+        firstResult.votes = 4_250_000L;
+        firstResult.percentage = 38.5;
+        firstResult.reportedTables = 88_245;
+        firstResult.totalTables = 98_500;
+        firstResult.participation = 68.2;
+        results.save(firstResult);
+
+        OfficialResult secondResult = new OfficialResult();
+        secondResult.election = election;
+        secondResult.candidate = juan;
+        secondResult.department = "Bogotá D.C.";
+        secondResult.municipality = "Bogotá";
+        secondResult.votes = 3_850_000L;
+        secondResult.percentage = 34.8;
+        secondResult.reportedTables = 88_245;
+        secondResult.totalTables = 98_500;
+        secondResult.participation = 68.2;
+        results.save(secondResult);
+
+        Poll poll = new Poll();
+        poll.source = "Centro Nacional de Consultoría";
+        poll.date = LocalDate.of(2026, 3, 15);
+        poll.sampleSize = 2_500;
+        poll.marginError = 2.0;
+        poll.methodology = "Telefónica";
+        poll = polls.save(poll);
+
+        PollResult mariaPoll = new PollResult();
+        mariaPoll.poll = poll;
+        mariaPoll.candidate = maria;
+        mariaPoll.percentage = 36.5;
+        pollResults.save(mariaPoll);
+
+        PollResult juanPoll = new PollResult();
+        juanPoll.poll = poll;
+        juanPoll.candidate = juan;
+        juanPoll.percentage = 34.0;
+        pollResults.save(juanPoll);
+    }
+
+    private void createUserIfMissing(
+            UserRepository users,
+            PasswordEncoder encoder,
+            String name,
+            String email,
+            String rawPassword,
+            Role role
+    ) {
+        if (users.selectEmailCount(email) != 0) {
+            return;
+        }
+
+        AppUser user = new AppUser();
+        user.name = name;
+        user.email = email;
+        user.password = encoder.encode(rawPassword);
+        user.role = role;
+        users.save(user);
+    }
+}
