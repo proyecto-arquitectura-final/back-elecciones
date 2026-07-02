@@ -139,14 +139,14 @@ public class AssistantConversationStore {
     public boolean feedback(UUID sessionId, Long messageId, Boolean helpful, String comment) {
         if (!persistenceEnabled) return false;
         String safeComment = comment == null || comment.isBlank() ? null : comment.trim();
-        return messages.updateFeedback(sessionId, messageId, helpful, safeComment) == 1;
+        return messages.updateFeedback(sessionId, messageId, helpful, safeComment, Instant.now()) == 1;
     }
 
     @Transactional
     public void close(UUID sessionId) {
         if (!persistenceEnabled || sessionId == null) return;
         messages.deleteBySessionKey(sessionId);
-        sessions.closeBySessionKey(sessionId);
+        sessions.closeBySessionKey(sessionId, Instant.now());
     }
 
     public boolean persistenceEnabled() {

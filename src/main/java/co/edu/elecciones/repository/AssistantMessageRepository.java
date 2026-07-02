@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,12 +21,12 @@ public interface AssistantMessageRepository extends StatementRepository<Assistan
             """)
     List<AssistantMessage> selectRecentBySessionKey(@Param("sessionKey") UUID sessionKey, Pageable pageable);
 
-    @Modifying(flushAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             update AssistantMessage m
             set m.helpful = :helpful,
                 m.feedbackComment = :comment,
-                m.updatedAt = current_timestamp
+                m.updatedAt = :updatedAt
             where m.id = :messageId
               and m.role = 'ASSISTANT'
               and m.session.sessionKey = :sessionKey
@@ -33,7 +34,8 @@ public interface AssistantMessageRepository extends StatementRepository<Assistan
     int updateFeedback(@Param("sessionKey") UUID sessionKey,
                        @Param("messageId") Long messageId,
                        @Param("helpful") Boolean helpful,
-                       @Param("comment") String comment);
+                       @Param("comment") String comment,
+                       @Param("updatedAt") Instant updatedAt);
 
     @Modifying(flushAutomatically = true)
     @Query("""

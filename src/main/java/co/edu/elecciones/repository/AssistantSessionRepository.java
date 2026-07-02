@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,12 +20,13 @@ public interface AssistantSessionRepository extends StatementRepository<Assistan
             """)
     Optional<AssistantSession> selectActiveBySessionKey(@Param("sessionKey") UUID sessionKey);
 
-    @Modifying(flushAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             update AssistantSession s
             set s.status = 'CLOSED',
-                s.updatedAt = current_timestamp
+                s.updatedAt = :updatedAt
             where s.sessionKey = :sessionKey
             """)
-    int closeBySessionKey(@Param("sessionKey") UUID sessionKey);
+    int closeBySessionKey(@Param("sessionKey") UUID sessionKey,
+                          @Param("updatedAt") Instant updatedAt);
 }
