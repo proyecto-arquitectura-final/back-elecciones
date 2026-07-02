@@ -1,0 +1,2 @@
+package co.edu.elecciones.domain; import jakarta.persistence.*; import jakarta.validation.constraints.*;
+@Entity public class Candidate extends BaseEntity { @NotBlank public String name; public String vicePresidentName; @ManyToOne(optional=false) public Party party; @Enumerated(EnumType.STRING) public ElectionType electionType; public String department; public String municipality; public boolean active=true; }

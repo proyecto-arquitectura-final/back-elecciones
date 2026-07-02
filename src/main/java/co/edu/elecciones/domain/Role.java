@@ -1,0 +1,1 @@
+package co.edu.elecciones.domain; public enum Role { ADMINISTRADOR, ANALISTA }

@@ -1,0 +1,1 @@
+package co.edu.elecciones.domain; public enum ElectionState { CONFIGURADA, ABIERTA, EN_CONTEO, CERRADA, ARCHIVADA }

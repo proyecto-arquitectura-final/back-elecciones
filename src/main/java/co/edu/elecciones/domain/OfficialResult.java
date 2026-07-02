@@ -1,0 +1,2 @@
+package co.edu.elecciones.domain; import jakarta.persistence.*; import java.time.Instant;
+@Entity public class OfficialResult extends BaseEntity { @ManyToOne public Election election; @ManyToOne public Candidate candidate; public String department; public String municipality; public Long votes=0L; public Double percentage=0.0; public Integer reportedTables=0; public Integer totalTables=0; public Double participation=0.0; public String source="MOCK_REGISTRADURIA"; public Instant importedAt=Instant.now(); }

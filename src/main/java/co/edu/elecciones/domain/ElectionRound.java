@@ -1,0 +1,1 @@
+package co.edu.elecciones.domain; public enum ElectionRound { NINGUNA, PRIMERA, SEGUNDA }

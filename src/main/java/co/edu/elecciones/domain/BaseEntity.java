@@ -1,0 +1,2 @@
+package co.edu.elecciones.domain; import jakarta.persistence.*; import java.time.Instant;
+@MappedSuperclass public abstract class BaseEntity { @Id @GeneratedValue(strategy=GenerationType.IDENTITY) public Long id; public Instant createdAt=Instant.now(); public Instant updatedAt=Instant.now(); @PreUpdate void u(){updatedAt=Instant.now();} public Long getId(){return id;} public void setId(Long id){this.id=id;} }

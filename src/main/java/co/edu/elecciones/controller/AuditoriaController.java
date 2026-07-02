@@ -1,0 +1,2 @@
+package co.edu.elecciones.controller; import co.edu.elecciones.commons.dto.ApiResponse; import co.edu.elecciones.domain.AuditEvent; import co.edu.elecciones.repository.AuditEventRepository; import org.springframework.web.bind.annotation.*; import java.util.*;
+@RestController @RequestMapping("/api/v1/auditoria") public class AuditoriaController { private final AuditEventRepository repo; public AuditoriaController(AuditEventRepository r){repo=r;} @GetMapping public ApiResponse<List<AuditEvent>> all(){return ApiResponse.ok("OK",repo.findAll());} }

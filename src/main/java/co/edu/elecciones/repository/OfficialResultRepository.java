@@ -1,0 +1,1 @@
+package co.edu.elecciones.repository; import co.edu.elecciones.domain.*; import org.springframework.data.jpa.repository.JpaRepository; public interface OfficialResultRepository extends JpaRepository<OfficialResult,Long> { java.util.List<OfficialResult> findByElectionId(Long electionId); java.util.List<OfficialResult> findByDepartmentIgnoreCase(String department);}

@@ -1,0 +1,1 @@
+package co.edu.elecciones.repository; import co.edu.elecciones.domain.*; import org.springframework.data.jpa.repository.JpaRepository; public interface ElectionRepository extends JpaRepository<Election,Long> {}

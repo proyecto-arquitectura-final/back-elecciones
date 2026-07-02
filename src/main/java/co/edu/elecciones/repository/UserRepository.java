@@ -1,0 +1,1 @@
+package co.edu.elecciones.repository; import co.edu.elecciones.domain.*; import org.springframework.data.jpa.repository.JpaRepository; public interface UserRepository extends JpaRepository<AppUser,Long> { java.util.Optional<AppUser> findByEmail(String email); boolean existsByEmail(String email);}
