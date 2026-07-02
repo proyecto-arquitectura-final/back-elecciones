@@ -22,12 +22,15 @@ public class RegistraduriaController {
 
     @PostMapping("/sincronizar")
     public ApiResponse<Long> sync(HttpServletRequest request) {
-        audit.log("SYNC", "Registraduria", null, "Polling/mock ejecutado", request);
-        return ApiResponse.ok("Sincronización mock ejecutada", results.selectCount());
+        long persisted = results.selectCount();
+        audit.log("VERIFY", "OfficialResult", null,
+                "Verificación de resultados persistidos: " + persisted, request);
+        return ApiResponse.ok("Se verificaron los resultados disponibles en la base de datos", persisted);
     }
 
     @GetMapping("/estado")
     public ApiResponse<String> status() {
-        return ApiResponse.ok("API Registraduría disponible", "MOCK_CONNECTED");
+        return ApiResponse.ok("Estado de la fuente de resultados",
+                results.selectCount() > 0 ? "DATABASE_WITH_DATA" : "DATABASE_EMPTY");
     }
 }

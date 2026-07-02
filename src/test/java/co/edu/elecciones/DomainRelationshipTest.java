@@ -18,9 +18,12 @@ class DomainRelationshipTest {
 
     private static final List<Class<?>> DOMAIN_TYPES = List.of(
             co.edu.elecciones.domain.AppUser.class,
+            co.edu.elecciones.domain.AssistantSession.class,
+            co.edu.elecciones.domain.AssistantMessage.class,
             co.edu.elecciones.domain.AuditEvent.class,
             Candidate.class,
             co.edu.elecciones.domain.Election.class,
+            co.edu.elecciones.domain.ElectionResultSummary.class,
             OfficialResult.class,
             co.edu.elecciones.domain.Party.class,
             co.edu.elecciones.domain.Poll.class,
@@ -46,6 +49,9 @@ class DomainRelationshipTest {
     @Test
     void requiredRelationsRemainManyToOne() throws Exception {
         assertTrue(Candidate.class.getDeclaredField("party").isAnnotationPresent(ManyToOne.class));
+        assertTrue(co.edu.elecciones.domain.AssistantSession.class.getDeclaredField("election").isAnnotationPresent(ManyToOne.class));
+        assertTrue(co.edu.elecciones.domain.AssistantMessage.class.getDeclaredField("session").isAnnotationPresent(ManyToOne.class));
+        assertTrue(co.edu.elecciones.domain.ElectionResultSummary.class.getDeclaredField("election").isAnnotationPresent(ManyToOne.class));
         assertTrue(OfficialResult.class.getDeclaredField("election").isAnnotationPresent(ManyToOne.class));
         assertTrue(OfficialResult.class.getDeclaredField("candidate").isAnnotationPresent(ManyToOne.class));
         assertTrue(PollResult.class.getDeclaredField("poll").isAnnotationPresent(ManyToOne.class));

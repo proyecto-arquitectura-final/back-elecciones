@@ -1,11 +1,17 @@
 package co.edu.elecciones;
 
 import co.edu.elecciones.domain.Candidate;
+import co.edu.elecciones.domain.Election;
+import co.edu.elecciones.domain.ElectionResultSummary;
+import co.edu.elecciones.domain.ElectionRound;
+import co.edu.elecciones.domain.ElectionState;
 import co.edu.elecciones.domain.ElectionType;
 import co.edu.elecciones.domain.Party;
 import co.edu.elecciones.domain.Poll;
 import co.edu.elecciones.domain.PollResult;
 import co.edu.elecciones.repository.CandidateRepository;
+import co.edu.elecciones.repository.ElectionRepository;
+import co.edu.elecciones.repository.ElectionResultSummaryRepository;
 import co.edu.elecciones.repository.PartyRepository;
 import co.edu.elecciones.repository.PollRepository;
 import co.edu.elecciones.repository.PollResultRepository;
@@ -27,6 +33,12 @@ class RepositoryStatementIntegrationTest {
 
     @Autowired
     private PartyRepository parties;
+
+    @Autowired
+    private ElectionRepository elections;
+
+    @Autowired
+    private ElectionResultSummaryRepository summaries;
 
     @Autowired
     private CandidateRepository candidates;
@@ -79,4 +91,33 @@ class RepositoryStatementIntegrationTest {
         assertEquals("Partido de prueba", selected.get(0).candidate.party.name);
         assertTrue(parties.selectAcronymCount("pp") > 0);
     }
+    @Test
+    void explicitQueryLoadsElectionResultSummary() {
+        Election election = new Election();
+        election.name = "Elección de resumen";
+        election.type = ElectionType.PRESIDENCIA;
+        election.round = ElectionRound.PRIMERA;
+        election.state = ElectionState.EN_CONTEO;
+        election = elections.save(election);
+
+        ElectionResultSummary summary = new ElectionResultSummary();
+        summary.election = election;
+        summary.eligibleVoters = 1_000L;
+        summary.totalVoters = 700L;
+        summary.validVotes = 680L;
+        summary.blankVotes = 20L;
+        summary.nullVotes = 10L;
+        summary.unmarkedVotes = 10L;
+        summary.reportedTables = 7;
+        summary.totalTables = 10;
+        summaries.save(summary);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        ElectionResultSummary selected = summaries.selectByElectionId(election.id).orElseThrow();
+        assertEquals(700L, selected.totalVoters);
+        assertEquals("Elección de resumen", selected.election.name);
+    }
+
 }

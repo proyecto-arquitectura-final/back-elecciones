@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @OpenAPIDefinition(
         info = @Info(
-                title = "Plataforma Elecciones Colombia 2026 API",
+                title = "Plataforma Electoral API",
                 version = "1.0.0",
                 description = "API para gestión electoral, resultados, predicciones, MCP y seguridad JWT"
         ),

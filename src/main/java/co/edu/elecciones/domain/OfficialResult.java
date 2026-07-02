@@ -24,6 +24,6 @@ public class OfficialResult extends BaseEntity {
     public Integer reportedTables = 0;
     public Integer totalTables = 0;
     public Double participation = 0.0;
-    public String source = "MOCK_REGISTRADURIA";
+    public String source = "CARGA_MANUAL";
     public Instant importedAt = Instant.now();
 }

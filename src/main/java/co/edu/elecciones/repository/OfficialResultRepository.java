@@ -46,6 +46,25 @@ public interface OfficialResultRepository extends StatementRepository<OfficialRe
             """)
     List<OfficialResult> selectByDepartment(@Param("department") String department);
 
+
+    @Query("""
+            select r
+            from OfficialResult r
+            join fetch r.election e
+            join fetch r.candidate c
+            join fetch c.party p
+            where e.id = :electionId
+              and c.id = :candidateId
+              and coalesce(lower(r.department), '') = coalesce(lower(:department), '')
+              and coalesce(lower(r.municipality), '') = coalesce(lower(:municipality), '')
+            """)
+    java.util.Optional<OfficialResult> selectByNaturalKey(
+            @Param("electionId") Long electionId,
+            @Param("candidateId") Long candidateId,
+            @Param("department") String department,
+            @Param("municipality") String municipality
+    );
+
     @Query("""
             select count(r)
             from OfficialResult r
@@ -86,4 +105,17 @@ public interface OfficialResultRepository extends StatementRepository<OfficialRe
             order by sum(r.votes) desc
             """)
     List<CandidateVoteAggregate> selectVotesGroupedByCandidate();
+
+    @Query("""
+            select c.name as candidate,
+                   p.name as party,
+                   coalesce(sum(r.votes), 0) as votes
+            from OfficialResult r
+            join r.candidate c
+            join c.party p
+            where r.election.id = :electionId
+            group by c.name, p.name
+            order by sum(r.votes) desc
+            """)
+    List<CandidateVoteAggregate> selectVotesGroupedByCandidateForElection(@Param("electionId") Long electionId);
 }

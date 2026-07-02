@@ -1,7 +1,11 @@
 package co.edu.elecciones.dto;
 
 import co.edu.elecciones.domain.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -32,7 +36,25 @@ public class Requests {
                                         Double participation, String source) {
     }
 
-    public record ChatRequest(String question) {
+    public record ElectionResultSummaryRequest(Long electionId, Long eligibleVoters, Long totalVoters,
+                                               Long validVotes, Long blankVotes, Long nullVotes,
+                                               Long unmarkedVotes, Integer reportedTables, Integer totalTables,
+                                               String source, Instant importedAt) {
+    }
+
+    public record ChatRequest(
+            @NotBlank @Size(max = 600) String question,
+            Long electionId,
+            UUID sessionId
+    ) {
+    }
+
+    public record ChatFeedbackRequest(
+            @NotNull UUID sessionId,
+            @NotNull Long messageId,
+            @NotNull Boolean helpful,
+            @Size(max = 500) String comment
+    ) {
     }
 
     public record McpInvokeRequest(String tool, Map<String, Object> arguments) {
