@@ -58,6 +58,21 @@ public class SecurityConfig {
                   ).permitAll()
 
                   .requestMatchers(
+                          HttpMethod.POST,
+                          "/api/v1/encuestas/**"
+                  ).hasRole("ADMINISTRADOR")
+
+                  .requestMatchers(
+                          HttpMethod.PUT,
+                          "/api/v1/encuestas/**"
+                  ).hasRole("ADMINISTRADOR")
+
+                  .requestMatchers(
+                          HttpMethod.DELETE,
+                          "/api/v1/encuestas/**"
+                  ).hasRole("ADMINISTRADOR")
+
+                  .requestMatchers(
                           HttpMethod.GET,
                           "/api/v1/partidos/**",
                           "/api/v1/candidatos/**",
@@ -71,6 +86,7 @@ public class SecurityConfig {
                   .requestMatchers(
                           "/api/v1/admin/**",
                           "/api/v1/usuarios/**",
+                          "/api/v1/auditoria/**",
                           "/api/v1/registraduria/**"
                   ).hasRole("ADMINISTRADOR")
 

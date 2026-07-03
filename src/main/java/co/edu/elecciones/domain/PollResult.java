@@ -1,6 +1,7 @@
 package co.edu.elecciones.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -17,5 +18,6 @@ public class PollResult extends BaseEntity {
     @JoinColumn(name = "candidate_id", nullable = false)
     public Candidate candidate;
 
+    @Column(nullable = false)
     public Double percentage;
 }

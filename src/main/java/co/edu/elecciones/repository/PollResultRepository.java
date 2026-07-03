@@ -15,15 +15,32 @@ public interface PollResultRepository extends StatementRepository<PollResult> {
             join fetch pr.poll p
             join fetch pr.candidate c
             join fetch c.party party
+            join fetch c.election e
             order by p.date desc, p.id desc, pr.id
             """)
     List<PollResult> selectAllWithDetails();
+
+
+    @Query("""
+            select pr
+            from PollResult pr
+            join fetch pr.poll p
+            join fetch p.election pe
+            join fetch pr.candidate c
+            join fetch c.party party
+            join fetch c.election ce
+            where pe.id = :electionId
+              and p.status = co.edu.elecciones.domain.PollStatus.APROBADA
+            order by p.date desc, p.id desc, pr.id
+            """)
+    List<PollResult> selectApprovedByElectionId(@Param("electionId") Long electionId);
 
     @Query("""
             select pr
             from PollResult pr
             join fetch pr.candidate c
             join fetch c.party party
+            join fetch c.election e
             where pr.poll.id = :pollId
             order by pr.id
             """)
@@ -35,6 +52,7 @@ public interface PollResultRepository extends StatementRepository<PollResult> {
             join fetch pr.poll p
             join fetch pr.candidate c
             join fetch c.party party
+            join fetch c.election e
             where p.id in :pollIds
             order by p.id, pr.id
             """)

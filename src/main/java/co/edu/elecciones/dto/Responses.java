@@ -1,13 +1,121 @@
 package co.edu.elecciones.dto;
 
-import co.edu.elecciones.domain.Candidate;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 public class Responses {
+
+    public record CandidateParty(
+            Long id,
+            String name,
+            String acronym,
+            String color,
+            boolean active
+    ) {
+    }
+
+    public record CandidateElection(
+            Long id,
+            String name,
+            String type,
+            String round,
+            LocalDate date,
+            String state
+    ) {
+    }
+
+    public record CandidateResponse(
+            Long id,
+            Instant createdAt,
+            Instant updatedAt,
+            String name,
+            String vicePresidentName,
+            CandidateParty party,
+            CandidateElection election,
+            String electionType,
+            String department,
+            String municipality,
+            boolean active,
+            long officialResultCount,
+            long pollResultCount,
+            boolean deletable
+    ) {
+    }
+
+    public record CandidateCounters(
+            long total,
+            long active,
+            long inactive,
+            long presidency,
+            long senate,
+            long chamber,
+            long representedParties
+    ) {
+    }
+
+    public record CandidateManagement(
+            CandidateCounters counters,
+            List<CandidateResponse> candidates,
+            List<CandidateParty> parties,
+            List<CandidateElection> elections,
+            Instant generatedAt
+    ) {
+    }
+    public record ElectionResponse(
+            Long id,
+            Instant createdAt,
+            Instant updatedAt,
+            String name,
+            String type,
+            String round,
+            LocalDate electionDate,
+            String state
+    ) {
+    }
+
+    public record ElectionManagementCounters(
+            long total,
+            long configured,
+            long open,
+            long counting,
+            long closed,
+            long archived,
+            long withSummary,
+            long withoutSummary
+    ) {
+    }
+
+    public record ElectionManagementItem(
+            Long id,
+            Instant createdAt,
+            Instant updatedAt,
+            String name,
+            String type,
+            String round,
+            LocalDate electionDate,
+            String state,
+            int reportedTables,
+            int totalTables,
+            Double progress,
+            boolean summaryAvailable,
+            long candidateCount,
+            long officialResultCount,
+            long assistantSessionCount,
+            boolean structureLocked,
+            boolean deletable,
+            List<String> allowedStates
+    ) {
+    }
+
+    public record ElectionManagement(
+            ElectionManagementCounters counters,
+            List<ElectionManagementItem> elections,
+            Instant generatedAt
+    ) {
+    }
+
     public record PredictionItem(String candidate, String party, double currentPercentage, double projectedPercentage,
                                  double probability, double uncertaintyMargin) {
     }
@@ -15,16 +123,236 @@ public class Responses {
     public record LiveSummary(long votes, double percentageTables, double participation, List<PredictionItem> leaders) {
     }
 
-    public record DashboardAdmin(long activeElections, long users, long parties, long candidates, long auditEvents) {
+    public record ResultPartyResponse(Long id, String name, String acronym, String color) {
     }
 
-    public record PollResultResponse(Long id, Instant createdAt, Instant updatedAt, Candidate candidate,
-                                     Double percentage) {
+    public record ResultElectionResponse(
+            Long id,
+            String name,
+            String type,
+            String round,
+            LocalDate date,
+            String state
+    ) {
     }
 
-    public record PollResponse(Long id, Instant createdAt, Instant updatedAt, String source, LocalDate date,
-                               Integer sampleSize, Double marginError, String methodology,
-                               List<PollResultResponse> results) {
+    public record ResultCandidateResponse(
+            Long id,
+            String name,
+            boolean active,
+            Long electionId,
+            ResultPartyResponse party
+    ) {
+    }
+
+    public record OfficialResultResponse(
+            Long id,
+            Instant createdAt,
+            Instant updatedAt,
+            ResultElectionResponse election,
+            ResultCandidateResponse candidate,
+            String department,
+            String municipality,
+            long votes,
+            double percentage,
+            int reportedTables,
+            int totalTables,
+            double participation,
+            String source,
+            Instant importedAt,
+            String validationStatus,
+            String validationMessage,
+            Instant validatedAt,
+            String validatedBy
+    ) {
+    }
+
+    public record ResultSummaryResponse(
+            Long id,
+            Long electionId,
+            long eligibleVoters,
+            long totalVoters,
+            long validVotes,
+            long blankVotes,
+            long nullVotes,
+            long unmarkedVotes,
+            int reportedTables,
+            int totalTables,
+            double tablePercentage,
+            double participation,
+            String source,
+            Instant importedAt
+    ) {
+    }
+
+    public record ResultStatusOption(String value, String label) {
+    }
+
+    public record ResultManagementCounters(
+            long records,
+            long candidateVotes,
+            int reportedTables,
+            int totalTables,
+            double tablePercentage,
+            double participation,
+            long validated,
+            long pending,
+            long rejected,
+            String traceabilityStatus,
+            long reconciliationDifference,
+            boolean reconciled,
+            Instant lastImportedAt
+    ) {
+    }
+
+    public record OfficialResultPage(
+            List<OfficialResultResponse> items,
+            int page,
+            int size,
+            long totalElements,
+            int totalPages
+    ) {
+    }
+
+    public record ResultManagement(
+            Long selectedElectionId,
+            ResultManagementCounters counters,
+            ResultSummaryResponse summary,
+            OfficialResultPage results,
+            List<ResultElectionResponse> elections,
+            List<ResultCandidateResponse> candidates,
+            List<ResultStatusOption> validationStatuses,
+            List<String> departments,
+            List<String> municipalities,
+            Instant generatedAt
+    ) {
+    }
+
+    public record ResultImportResponse(int created, int updated, int processed) {
+    }
+
+    public record ResultValidationResponse(long validated, long rejected, long recalculatedScopes) {
+    }
+
+    public record DashboardCounters(
+            long activeElections,
+            long candidates,
+            long polls,
+            long users,
+            long parties,
+            long auditEvents,
+            long resultRecords
+    ) {
+    }
+
+    public record DashboardElection(
+            Long id,
+            String name,
+            String type,
+            LocalDate date,
+            String state,
+            int reportedTables,
+            int totalTables,
+            Double progress,
+            boolean summaryAvailable
+    ) {
+    }
+
+    public record DashboardActivity(
+            Long id,
+            String title,
+            String detail,
+            String actor,
+            boolean success,
+            Instant at
+    ) {
+    }
+
+    public record DashboardSystemStatus(
+            String code,
+            String status,
+            String detail,
+            String level
+    ) {
+    }
+
+    public record DashboardAdmin(
+            DashboardCounters counters,
+            List<DashboardElection> elections,
+            List<DashboardActivity> recentActivity,
+            List<DashboardSystemStatus> systemStatus,
+            Instant generatedAt
+    ) {
+    }
+
+    public record PollPartyResponse(Long id, String name, String acronym, String color) {
+    }
+
+    public record PollElectionResponse(Long id, String name, String type, String round, LocalDate date, String state) {
+    }
+
+    public record PollCandidateResponse(
+            Long id,
+            String name,
+            boolean active,
+            PollPartyResponse party,
+            Long electionId
+    ) {
+    }
+
+    public record PollResultResponse(
+            Long id,
+            Instant createdAt,
+            Instant updatedAt,
+            PollCandidateResponse candidate,
+            Double percentage
+    ) {
+    }
+
+    public record PollResponse(
+            Long id,
+            Instant createdAt,
+            Instant updatedAt,
+            PollElectionResponse election,
+            String source,
+            LocalDate date,
+            Integer sampleSize,
+            Double marginError,
+            String methodology,
+            String status,
+            Double totalPercentage,
+            List<PollResultResponse> results
+    ) {
+    }
+
+    public record PollManagementCounters(
+            long total,
+            long approved,
+            long pending,
+            long rejected,
+            double averageSample
+    ) {
+    }
+
+    public record PollPage(
+            List<PollResponse> items,
+            int page,
+            int size,
+            long totalElements,
+            int totalPages
+    ) {
+    }
+
+    public record PollManagement(
+            PollManagementCounters counters,
+            PollPage polls,
+            List<PollElectionResponse> elections,
+            List<PollCandidateResponse> candidates,
+            Instant generatedAt
+    ) {
+    }
+
+    public record PollImportResponse(int polls, int results) {
     }
 
     public record PublicElection(Long id, String name, String type, String round, LocalDate date, String state) {

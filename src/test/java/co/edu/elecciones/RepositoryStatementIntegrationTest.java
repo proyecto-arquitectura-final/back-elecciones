@@ -9,6 +9,7 @@ import co.edu.elecciones.domain.ElectionType;
 import co.edu.elecciones.domain.Party;
 import co.edu.elecciones.domain.Poll;
 import co.edu.elecciones.domain.PollResult;
+import co.edu.elecciones.domain.PollStatus;
 import co.edu.elecciones.repository.CandidateRepository;
 import co.edu.elecciones.repository.ElectionRepository;
 import co.edu.elecciones.repository.ElectionResultSummaryRepository;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
@@ -59,13 +61,24 @@ class RepositoryStatementIntegrationTest {
         party.acronym = "PP";
         party = parties.save(party);
 
+        Election election = new Election();
+        election.name = "Elección presidencial de prueba";
+        election.type = ElectionType.PRESIDENCIA;
+        election.round = ElectionRound.PRIMERA;
+        election.state = ElectionState.CONFIGURADA;
+        election.electionDate = LocalDate.of(2026, 5, 31);
+        election = elections.save(election);
+
         Candidate candidate = new Candidate();
         candidate.name = "Candidata de prueba";
         candidate.party = party;
+        candidate.election = election;
         candidate.electionType = ElectionType.PRESIDENCIA;
         candidate = candidates.save(candidate);
 
         Poll poll = new Poll();
+        poll.election = election;
+        poll.status = PollStatus.APROBADA;
         poll.source = "Firma de prueba";
         poll.date = LocalDate.of(2026, 4, 10);
         poll.sampleSize = 1_500;
@@ -89,6 +102,22 @@ class RepositoryStatementIntegrationTest {
         assertEquals(1, selected.size());
         assertEquals("Candidata de prueba", selected.get(0).candidate.name);
         assertEquals("Partido de prueba", selected.get(0).candidate.party.name);
+        assertEquals(1, pollResults.selectApprovedByElectionId(election.id).size());
+
+        var page = polls.selectPage(
+                election.id,
+                PollStatus.APROBADA,
+                "firma",
+                PageRequest.of(0, 10)
+        );
+        assertEquals(1, page.getTotalElements());
+        assertEquals("Firma de prueba", page.getContent().get(0).source);
+
+        PollRepository.CountersRow counters = polls.selectCounters(election.id);
+        assertEquals(1L, counters.getTotal());
+        assertEquals(1L, counters.getApproved());
+        assertEquals(0L, counters.getPending());
+        assertEquals(1_500.0, counters.getAverageSample());
         assertTrue(parties.selectAcronymCount("pp") > 0);
     }
     @Test
@@ -119,5 +148,76 @@ class RepositoryStatementIntegrationTest {
         assertEquals(700L, selected.totalVoters);
         assertEquals("Elección de resumen", selected.election.name);
     }
+
+    @Test
+    void candidateManagementQueryLoadsElectionPartyAndDependencyCounts() {
+        Party party = new Party();
+        party.name = "Partido gestión";
+        party.acronym = "PG";
+        party.color = "#2563EB";
+        party = parties.save(party);
+
+        Election election = new Election();
+        election.name = "Cámara gestión";
+        election.type = ElectionType.CAMARA;
+        election.round = ElectionRound.NINGUNA;
+        election.state = ElectionState.CONFIGURADA;
+        election.electionDate = LocalDate.of(2026, 3, 8);
+        election = elections.save(election);
+
+        Candidate candidate = new Candidate();
+        candidate.name = "Candidata Gestión";
+        candidate.party = party;
+        candidate.election = election;
+        candidate.electionType = ElectionType.CAMARA;
+        candidate.department = "Antioquia";
+        candidates.save(candidate);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        var rows = candidates.selectManagementRows();
+        assertEquals(1, rows.size());
+        assertEquals("Candidata Gestión", rows.get(0).getName());
+        assertEquals("Cámara gestión", rows.get(0).getElectionName());
+        assertEquals("Partido gestión", rows.get(0).getPartyName());
+        assertEquals(0L, rows.get(0).getOfficialResultCount());
+        assertEquals(0L, rows.get(0).getPollResultCount());
+        assertEquals(1L, candidates.selectDuplicateNameCount(election.id, "candidata gestión", null));
+    }
+
+    @Test
+    void electionManagementQueryLoadsSummaryAndDependencies() {
+        Election election = new Election();
+        election.name = "Elección gestión";
+        election.type = ElectionType.PRESIDENCIA;
+        election.round = ElectionRound.PRIMERA;
+        election.state = ElectionState.EN_CONTEO;
+        election.electionDate = LocalDate.of(2026, 5, 31);
+        election = elections.save(election);
+
+        ElectionResultSummary summary = new ElectionResultSummary();
+        summary.election = election;
+        summary.eligibleVoters = 1_000L;
+        summary.totalVoters = 700L;
+        summary.validVotes = 680L;
+        summary.blankVotes = 20L;
+        summary.nullVotes = 10L;
+        summary.unmarkedVotes = 10L;
+        summary.reportedTables = 8;
+        summary.totalTables = 10;
+        summaries.save(summary);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        var row = elections.selectManagementRow(election.id).orElseThrow();
+        assertEquals("Elección gestión", row.getName());
+        assertEquals(8, row.getReportedTables());
+        assertEquals(10, row.getTotalTables());
+        assertTrue(row.getSummaryAvailable());
+        assertEquals(0L, row.getCandidateCount());
+    }
+
 
 }

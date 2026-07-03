@@ -14,15 +14,51 @@ public class AuditService {
         this.repo = repo;
     }
 
-    public void log(String action, String entity, Long id, String details, HttpServletRequest req) {
-        AuditEvent e = new AuditEvent();
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        e.username = auth == null ? "system" : auth.getName();
-        e.action = action;
-        e.entity = entity;
-        e.entityId = id;
-        e.details = details;
-        e.ip = req == null ? null : req.getRemoteAddr();
-        repo.save(e);
+    public void log(String action, String entity, Long id, String details, HttpServletRequest request) {
+        log(action, entity, id, details, request, true);
+    }
+
+    public void log(
+            String action,
+            String entity,
+            Long id,
+            String details,
+            HttpServletRequest request,
+            boolean success
+    ) {
+        AuditEvent event = new AuditEvent();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        event.username = authentication == null || authentication.getName() == null
+                ? "sistema"
+                : truncate(authentication.getName(), 255);
+        event.action = truncate(defaultText(action, "SIN_ACCION"), 255);
+        event.entity = truncate(defaultText(entity, "SISTEMA"), 255);
+        event.entityId = id;
+        event.details = truncate(defaultText(details, "Sin detalle"), 1500);
+        event.ip = truncate(resolveIp(request), 255);
+        event.success = success;
+        repo.save(event);
+    }
+
+    private String resolveIp(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",", 2)[0].trim();
+        }
+        return request.getRemoteAddr();
+    }
+
+    private String defaultText(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private String truncate(String value, int max) {
+        if (value == null || value.length() <= max) {
+            return value;
+        }
+        return value.substring(0, max);
     }
 }

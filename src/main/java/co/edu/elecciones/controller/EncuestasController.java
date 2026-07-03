@@ -1,11 +1,18 @@
 package co.edu.elecciones.controller;
 
 import co.edu.elecciones.commons.dto.ApiResponse;
+import co.edu.elecciones.domain.PollStatus;
 import co.edu.elecciones.dto.Requests.PollRequest;
+import co.edu.elecciones.dto.Responses.PollImportResponse;
+import co.edu.elecciones.dto.Responses.PollManagement;
 import co.edu.elecciones.dto.Responses.PollResponse;
 import co.edu.elecciones.service.AuditService;
 import co.edu.elecciones.service.PollService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,40 +39,75 @@ public class EncuestasController {
 
     @GetMapping
     public ApiResponse<List<PollResponse>> all() {
-        return ApiResponse.ok("OK", service.selectAll());
+        return ApiResponse.ok("Encuestas consultadas", service.selectAll());
+    }
+
+    @GetMapping("/gestion")
+    public ApiResponse<PollManagement> management(
+            @RequestParam(required = false) Long electionId,
+            @RequestParam(required = false) PollStatus status,
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ApiResponse.ok(
+                "Gestión de encuestas consultada",
+                service.management(electionId, status, search, page, size)
+        );
     }
 
     @GetMapping("/{id}")
     public ApiResponse<PollResponse> one(@PathVariable Long id) {
-        return ApiResponse.ok("OK", service.selectById(id));
+        return ApiResponse.ok("Encuesta consultada", service.selectById(id));
     }
 
     @PostMapping
-    public ApiResponse<PollResponse> create(@RequestBody PollRequest request, HttpServletRequest http) {
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<PollResponse>> create(
+            @Valid @RequestBody PollRequest request,
+            HttpServletRequest http
+    ) {
         PollResponse saved = service.create(request);
-        audit.log("CREATE", "Poll", saved.id(), "Creación", http);
-        return ApiResponse.ok("Creada", saved);
+        audit.log("CREATE", "Poll", saved.id(), "Creación de encuesta", http);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Encuesta creada", saved));
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<PollResponse> update(@PathVariable Long id, @RequestBody PollRequest request,
-                                            HttpServletRequest http) {
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ApiResponse<PollResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody PollRequest request,
+            HttpServletRequest http
+    ) {
         PollResponse saved = service.update(id, request);
-        audit.log("UPDATE", "Poll", saved.id(), "Actualización", http);
-        return ApiResponse.ok("Actualizada", saved);
+        audit.log("UPDATE", "Poll", saved.id(), "Actualización de encuesta", http);
+        return ApiResponse.ok("Encuesta actualizada", saved);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ApiResponse<Void> delete(@PathVariable Long id, HttpServletRequest http) {
         service.delete(id);
-        audit.log("DELETE", "Poll", id, "Eliminación", http);
-        return ApiResponse.ok("Eliminada", null);
+        audit.log("DELETE", "Poll", id, "Eliminación de encuesta", http);
+        return ApiResponse.ok("Encuesta eliminada", null);
     }
 
     @PostMapping("/import-csv")
-    public ApiResponse<Integer> csv(@RequestParam MultipartFile file, HttpServletRequest http) throws Exception {
-        int imported = service.importCsv(file);
-        audit.log("IMPORT", "Poll", null, "CSV encuestas: " + imported, http);
-        return ApiResponse.ok("Importadas", imported);
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<PollImportResponse>> csv(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest http
+    ) {
+        PollImportResponse imported = service.importCsv(file);
+        audit.log(
+                "IMPORT",
+                "Poll",
+                null,
+                "CSV de encuestas: " + imported.polls() + " encuestas y " + imported.results() + " resultados",
+                http
+        );
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Encuestas importadas", imported));
     }
 }

@@ -186,7 +186,9 @@ public class PublicPredictionService {
     private Map<Long, CandidateInput> buildCandidateInputs(Election election) {
         Map<Long, CandidateInput> result = new LinkedHashMap<>();
         for (Candidate candidate : candidates.selectAll()) {
-            if (!candidate.active || candidate.electionType != election.type) {
+            if (!candidate.active
+                    || candidate.election == null
+                    || !candidate.election.id.equals(election.id)) {
                 continue;
             }
             result.put(candidate.id, new CandidateInput(
@@ -221,8 +223,11 @@ public class PublicPredictionService {
                 : (election.electionDate.isBefore(LocalDate.now()) ? election.electionDate : LocalDate.now());
         LocalDate minimumDate = referenceDate.minusYears(2);
 
-        for (PollResult result : pollResults.selectAllWithDetails()) {
-            if (result.candidate == null || result.candidate.electionType != election.type || result.poll == null) {
+        for (PollResult result : pollResults.selectApprovedByElectionId(election.id)) {
+            if (result.candidate == null
+                    || result.candidate.election == null
+                    || !result.candidate.election.id.equals(election.id)
+                    || result.poll == null) {
                 continue;
             }
             if (result.poll.date != null

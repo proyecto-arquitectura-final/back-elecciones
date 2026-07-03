@@ -49,6 +49,7 @@ class DomainRelationshipTest {
     @Test
     void requiredRelationsRemainManyToOne() throws Exception {
         assertTrue(Candidate.class.getDeclaredField("party").isAnnotationPresent(ManyToOne.class));
+        assertTrue(Candidate.class.getDeclaredField("election").isAnnotationPresent(ManyToOne.class));
         assertTrue(co.edu.elecciones.domain.AssistantSession.class.getDeclaredField("election").isAnnotationPresent(ManyToOne.class));
         assertTrue(co.edu.elecciones.domain.AssistantMessage.class.getDeclaredField("session").isAnnotationPresent(ManyToOne.class));
         assertTrue(co.edu.elecciones.domain.ElectionResultSummary.class.getDeclaredField("election").isAnnotationPresent(ManyToOne.class));

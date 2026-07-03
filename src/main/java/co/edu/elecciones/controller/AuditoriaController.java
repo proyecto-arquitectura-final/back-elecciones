@@ -1,25 +1,33 @@
 package co.edu.elecciones.controller;
 
 import co.edu.elecciones.commons.dto.ApiResponse;
-import co.edu.elecciones.domain.AuditEvent;
-import co.edu.elecciones.repository.AuditEventRepository;
+import co.edu.elecciones.dto.AdminDtos.AuditManagement;
+import co.edu.elecciones.service.AuditManagementService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/auditoria")
 public class AuditoriaController {
-    private final AuditEventRepository repository;
+    private final AuditManagementService service;
 
-    public AuditoriaController(AuditEventRepository repository) {
-        this.repository = repository;
+    public AuditoriaController(AuditManagementService service) {
+        this.service = service;
     }
 
-    @GetMapping
-    public ApiResponse<List<AuditEvent>> all() {
-        return ApiResponse.ok("OK", repository.selectAll());
+    @GetMapping("/gestion")
+    public ApiResponse<AuditManagement> management(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "") String action,
+            @RequestParam(defaultValue = "") String entity,
+            @RequestParam(required = false) Boolean success,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ApiResponse.ok("Auditoría consultada", service.getManagement(
+                search, action, entity, success, page, size
+        ));
     }
 }

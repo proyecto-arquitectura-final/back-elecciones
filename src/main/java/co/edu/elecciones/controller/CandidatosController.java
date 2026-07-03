@@ -1,13 +1,14 @@
 package co.edu.elecciones.controller;
 
 import co.edu.elecciones.commons.dto.ApiResponse;
-import co.edu.elecciones.domain.Candidate;
 import co.edu.elecciones.dto.Requests.CandidateRequest;
-import co.edu.elecciones.repository.CandidateRepository;
-import co.edu.elecciones.repository.PartyRepository;
+import co.edu.elecciones.dto.Responses.CandidateManagement;
+import co.edu.elecciones.dto.Responses.CandidateResponse;
 import co.edu.elecciones.service.AuditService;
+import co.edu.elecciones.service.CandidateManagementService;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,63 +23,58 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/candidatos")
 public class CandidatosController {
-    private final CandidateRepository repository;
-    private final PartyRepository parties;
+    private final CandidateManagementService service;
     private final AuditService audit;
 
-    public CandidatosController(CandidateRepository repository, PartyRepository parties, AuditService audit) {
-        this.repository = repository;
-        this.parties = parties;
+    public CandidatosController(CandidateManagementService service, AuditService audit) {
+        this.service = service;
         this.audit = audit;
     }
 
     @GetMapping
-    public ApiResponse<List<Candidate>> all() {
-        return ApiResponse.ok("OK", repository.selectAll());
+    public ApiResponse<List<CandidateResponse>> all() {
+        return ApiResponse.ok("Candidatos consultados", service.selectAll());
+    }
+
+    @GetMapping("/gestion")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ApiResponse<CandidateManagement> management() {
+        return ApiResponse.ok("Gestión de candidatos", service.getManagement());
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<Candidate> one(@PathVariable Long id) {
-        return ApiResponse.ok("OK", repository.selectById(id).orElseThrow());
+    public ApiResponse<CandidateResponse> one(@PathVariable Long id) {
+        return ApiResponse.ok("Candidato consultado", service.selectById(id));
     }
 
     @PostMapping
-    public ApiResponse<Candidate> create(@RequestBody CandidateRequest request, HttpServletRequest http) {
-        Candidate candidate = new Candidate();
-        apply(candidate, request);
-        Candidate saved = repository.save(candidate);
-        audit.log("CREATE", "Candidate", saved.id, "Creación", http);
-        return ApiResponse.ok("Creado", saved);
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ApiResponse<CandidateResponse> create(
+            @Valid @RequestBody CandidateRequest request,
+            HttpServletRequest http
+    ) {
+        CandidateResponse saved = service.create(request);
+        audit.log("CREATE", "Candidate", saved.id(), "Candidato creado: " + saved.name(), http);
+        return ApiResponse.ok("Candidato creado", saved);
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<Candidate> update(@PathVariable Long id, @RequestBody CandidateRequest request,
-                                         HttpServletRequest http) {
-        Candidate candidate = repository.selectById(id).orElseThrow();
-        apply(candidate, request);
-        Candidate saved = repository.save(candidate);
-        audit.log("UPDATE", "Candidate", saved.id, "Actualización", http);
-        return ApiResponse.ok("Actualizado", saved);
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ApiResponse<CandidateResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody CandidateRequest request,
+            HttpServletRequest http
+    ) {
+        CandidateResponse saved = service.update(id, request);
+        audit.log("UPDATE", "Candidate", saved.id(), "Candidato actualizado: " + saved.name(), http);
+        return ApiResponse.ok("Candidato actualizado", saved);
     }
 
-    @Transactional
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ApiResponse<Void> delete(@PathVariable Long id, HttpServletRequest http) {
-        repository.selectById(id).orElseThrow();
-        repository.deleteByIdStatement(id);
-        audit.log("DELETE", "Candidate", id, "Eliminación", http);
-        return ApiResponse.ok("Eliminado", null);
-    }
-
-    private void apply(Candidate candidate, CandidateRequest request) {
-        candidate.name = request.name();
-        candidate.vicePresidentName = request.vicePresidentName();
-        candidate.party = parties.selectById(request.partyId()).orElseThrow();
-        candidate.electionType = request.electionType();
-        candidate.department = request.department();
-        candidate.municipality = request.municipality();
-        if (request.active() != null) {
-            candidate.active = request.active();
-        }
+        service.delete(id);
+        audit.log("DELETE", "Candidate", id, "Candidato eliminado", http);
+        return ApiResponse.ok("Candidato eliminado", null);
     }
 }

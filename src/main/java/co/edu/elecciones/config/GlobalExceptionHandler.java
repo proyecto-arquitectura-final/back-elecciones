@@ -4,8 +4,10 @@ import co.edu.elecciones.commons.dto.ApiResponse;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -17,7 +19,31 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({IllegalArgumentException.class, NoSuchElementException.class})
     public ResponseEntity<ApiResponse<Void>> badRequest(RuntimeException exception) {
-        return ResponseEntity.badRequest().body(ApiResponse.error(exception.getMessage()));
+        String message = exception.getMessage() == null || exception.getMessage().isBlank()
+                ? "La solicitud contiene información inválida"
+                : exception.getMessage();
+        return ResponseEntity.badRequest().body(ApiResponse.error(message));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> validation(MethodArgumentNotValidException exception) {
+        String message = exception.getBindingResult().getFieldErrors().stream()
+                .findFirst()
+                .map(error -> error.getDefaultMessage() == null ? "Campo inválido" : error.getDefaultMessage())
+                .orElse("La solicitud contiene información inválida");
+        return ResponseEntity.badRequest().body(ApiResponse.error(message));
+    }
+
+    @ExceptionHandler(BusinessConflictException.class)
+    public ResponseEntity<ApiResponse<Void>> conflict(BusinessConflictException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(exception.getMessage()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> integrity(DataIntegrityViolationException exception) {
+        LOGGER.warn("Conflicto de integridad de datos", exception);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error("La operación no puede completarse porque el registro tiene información relacionada"));
     }
 
     @ExceptionHandler(EntityNotFoundException.class)

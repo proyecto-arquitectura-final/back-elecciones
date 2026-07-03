@@ -10,6 +10,7 @@ import co.edu.elecciones.domain.OfficialResult;
 import co.edu.elecciones.domain.Party;
 import co.edu.elecciones.domain.Poll;
 import co.edu.elecciones.domain.PollResult;
+import co.edu.elecciones.domain.PollStatus;
 import co.edu.elecciones.repository.CandidateRepository;
 import co.edu.elecciones.repository.ElectionRepository;
 import co.edu.elecciones.repository.ElectionResultSummaryRepository;
@@ -51,8 +52,8 @@ class PublicPredictionServiceTest {
         Election election = election();
         Party partyA = party(1L, "Partido A", "PA", "#2563eb");
         Party partyB = party(2L, "Partido B", "PB", "#dc2626");
-        Candidate candidateA = candidate(10L, "Candidata A", partyA);
-        Candidate candidateB = candidate(20L, "Candidato B", partyB);
+        Candidate candidateA = candidate(10L, "Candidata A", partyA, election);
+        Candidate candidateB = candidate(20L, "Candidato B", partyB, election);
 
         ElectionResultSummary summary = new ElectionResultSummary();
         summary.election = election;
@@ -70,7 +71,7 @@ class PublicPredictionServiceTest {
         when(summaries.selectByElectionId(1L)).thenReturn(Optional.of(summary));
         when(candidates.selectAll()).thenReturn(List.of(candidateA, candidateB));
         when(officialResults.selectByElectionId(1L)).thenReturn(List.of(resultA, resultB));
-        when(pollResults.selectAllWithDetails()).thenReturn(List.of(pollA, pollB));
+        when(pollResults.selectApprovedByElectionId(1L)).thenReturn(List.of(pollA, pollB));
 
         var dashboard = service.load(1L);
 
@@ -103,11 +104,12 @@ class PublicPredictionServiceTest {
         return party;
     }
 
-    private Candidate candidate(Long id, String name, Party party) {
+    private Candidate candidate(Long id, String name, Party party, Election election) {
         Candidate candidate = new Candidate();
         candidate.id = id;
         candidate.name = name;
         candidate.party = party;
+        candidate.election = election;
         candidate.active = true;
         candidate.electionType = ElectionType.PRESIDENCIA;
         return candidate;
@@ -124,6 +126,8 @@ class PublicPredictionServiceTest {
     private Poll poll() {
         Poll poll = new Poll();
         poll.id = 50L;
+        poll.election = election();
+        poll.status = PollStatus.APROBADA;
         poll.source = "Encuestadora";
         poll.date = LocalDate.now().minusDays(3);
         poll.sampleSize = 2_000;

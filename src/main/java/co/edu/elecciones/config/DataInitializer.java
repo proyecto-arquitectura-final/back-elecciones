@@ -47,7 +47,7 @@ public class DataInitializer {
             String rawPassword,
             Role role
     ) {
-        if (users.selectEmailCount(email) != 0) {
+        if (users.selectEmailCount(email, null) != 0) {
             return;
         }
 
